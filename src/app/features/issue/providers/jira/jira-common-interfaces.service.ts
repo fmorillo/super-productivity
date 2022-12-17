@@ -67,14 +67,15 @@ export class JiraCommonInterfacesService implements IssueServiceInterface {
     issue: JiraIssue;
     issueTitle: string;
   } | null> {
-    if (!task.projectId) {
+    const projectId = task.projectId ? task.projectId : 0;
+    if (!projectId) {
       throw new Error('No projectId');
     }
     if (!task.issueId) {
       throw new Error('No issueId');
     }
 
-    const cfg = await this._getCfgOnce$(task.projectId).toPromise();
+    const cfg = await this._getCfgOnce$(projectId).toPromise();
     const issue = (await this._jiraApiService
       .getIssueById$(task.issueId, cfg)
       .toPromise()) as JiraIssue;
@@ -86,7 +87,7 @@ export class JiraCommonInterfacesService implements IssueServiceInterface {
     if (wasUpdated) {
       return {
         taskChanges: {
-          ...this.getAddTaskData(issue),
+          ...this.getAddTaskData(issue, projectId),
           issueWasUpdated: true,
         },
         issue,
@@ -122,7 +123,10 @@ export class JiraCommonInterfacesService implements IssueServiceInterface {
     });
   }
 
-  getAddTaskData(issue: JiraIssueReduced): Partial<Task> & { title: string } {
+  getAddTaskData(
+    issue: JiraIssueReduced,
+    projectId: string,
+  ): Partial<Task> & { title: string } {
     return {
       title: `${issue.key} ${issue.summary}`,
       issuePoints: issue.storyPoints,

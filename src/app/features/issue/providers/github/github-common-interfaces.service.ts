@@ -69,14 +69,15 @@ export class GithubCommonInterfacesService implements IssueServiceInterface {
     issue: GithubIssue;
     issueTitle: string;
   } | null> {
-    if (!task.projectId) {
+    const projectId = task.projectId ? task.projectId : 0;
+    if (!projectId) {
       throw new Error('No projectId');
     }
     if (!task.issueId) {
       throw new Error('No issueId');
     }
 
-    const cfg = await this._getCfgOnce$(task.projectId).toPromise();
+    const cfg = await this._getCfgOnce$(projectId).toPromise();
     const issue = await this._githubApiService.getById$(+task.issueId, cfg).toPromise();
 
     // NOTE we are not able to filter out user updates to the issue itself by the user
@@ -100,7 +101,7 @@ export class GithubCommonInterfacesService implements IssueServiceInterface {
     if (wasUpdated) {
       return {
         taskChanges: {
-          ...this.getAddTaskData(issue),
+          ...this.getAddTaskData(issue, projectId),
           issueWasUpdated: true,
         },
         issue,
@@ -149,7 +150,10 @@ export class GithubCommonInterfacesService implements IssueServiceInterface {
       .toPromise();
   }
 
-  getAddTaskData(issue: GithubIssueReduced): Partial<Task> & { title: string } {
+  getAddTaskData(
+    issue: GithubIssueReduced,
+    projectId: string,
+  ): Partial<Task> & { title: string } {
     return {
       title: this._formatIssueTitle(issue.number, issue.title),
       issueWasUpdated: false,

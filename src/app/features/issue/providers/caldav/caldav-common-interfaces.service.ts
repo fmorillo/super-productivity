@@ -43,7 +43,10 @@ export class CaldavCommonInterfacesService implements IssueServiceInterface {
     return isCaldavEnabled(cfg);
   }
 
-  getAddTaskData(issueData: CaldavIssueReduced): Partial<Task> & { title: string } {
+  getAddTaskData(
+    issueData: CaldavIssueReduced,
+    projectId: string,
+  ): Partial<Task> & { title: string } {
     return {
       issueLastUpdated: issueData.etag_hash,
       title: issueData.summary,
@@ -65,14 +68,15 @@ export class CaldavCommonInterfacesService implements IssueServiceInterface {
     issue: CaldavIssue;
     issueTitle: string;
   } | null> {
-    if (!task.projectId) {
+    const projectId = task.projectId ? task.projectId : null;
+    if (!projectId) {
       throw new Error('No projectId');
     }
     if (!task.issueId) {
       throw new Error('No issueId');
     }
 
-    const cfg = await this._getCfgOnce$(task.projectId).toPromise();
+    const cfg = await this._getCfgOnce$(projectId).toPromise();
     const issue = await this._caldavClientService.getById$(task.issueId, cfg).toPromise();
 
     const wasUpdated = issue.etag_hash !== task.issueLastUpdated;
@@ -80,7 +84,7 @@ export class CaldavCommonInterfacesService implements IssueServiceInterface {
     if (wasUpdated) {
       return {
         taskChanges: {
-          ...this.getAddTaskData(issue),
+          ...this.getAddTaskData(issue, projectId),
           issueWasUpdated: true,
         },
         issue,
@@ -123,7 +127,7 @@ export class CaldavCommonInterfacesService implements IssueServiceInterface {
         return {
           task,
           taskChanges: {
-            ...this.getAddTaskData(issue),
+            ...this.getAddTaskData(issue, projectId),
             issueWasUpdated: true,
           },
           issue,

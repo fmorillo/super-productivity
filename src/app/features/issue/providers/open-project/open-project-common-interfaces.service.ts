@@ -83,13 +83,14 @@ export class OpenProjectCommonInterfacesService implements IssueServiceInterface
     issue: OpenProjectWorkPackage;
     issueTitle: string;
   } | null> {
-    if (!task.projectId) {
+    const projectId = task.projectId ? task.projectId : 0;
+    if (!projectId) {
       throw new Error('No projectId');
     }
     if (!task.issueId) {
       throw new Error('No issueId');
     }
-    const cfg = await this._getCfgOnce$(task.projectId).toPromise();
+    const cfg = await this._getCfgOnce$(projectId).toPromise();
     const issue = await this._openProjectApiService
       .getById$(+task.issueId, cfg)
       .toPromise();
@@ -100,7 +101,7 @@ export class OpenProjectCommonInterfacesService implements IssueServiceInterface
     if (wasUpdated) {
       return {
         taskChanges: {
-          ...this.getAddTaskData(issue),
+          ...this.getAddTaskData(issue, projectId),
           issueWasUpdated: true,
         },
         issue,
@@ -140,6 +141,7 @@ export class OpenProjectCommonInterfacesService implements IssueServiceInterface
 
   getAddTaskData(
     issue: OpenProjectWorkPackageReduced,
+    projectId: string,
   ): Partial<Task> & { title: string } {
     const parsedEstimate: number = parseOpenProjectDuration(
       issue.estimatedTime as string | number | null,

@@ -52,7 +52,10 @@ export class GiteaCommonInterfacesService implements IssueServiceInterface {
       ),
     );
   }
-  getAddTaskData(issue: GiteaIssue): Partial<Readonly<TaskCopy>> & { title: string } {
+  getAddTaskData(
+    issue: GiteaIssue,
+    projectId: string,
+  ): Partial<Readonly<TaskCopy>> & { title: string } {
     return {
       title: formatGiteaIssueTitle(issue),
       issueWasUpdated: false,
@@ -75,13 +78,14 @@ export class GiteaCommonInterfacesService implements IssueServiceInterface {
     issue: GiteaIssue;
     issueTitle: string;
   } | null> {
-    if (!task.projectId) {
+    const projectId = task.projectId ? task.projectId : 0;
+    if (!projectId) {
       throw new Error('No projectId');
     }
     if (!task.issueId) {
       throw new Error('No issueId');
     }
-    const cfg = await this._getCfgOnce$(task.projectId).toPromise();
+    const cfg = await this._getCfgOnce$(projectId).toPromise();
     const issue = await this._giteaApiService.getById$(+task.issueId, cfg).toPromise();
 
     const lastRemoteUpdate = new Date(issue.updated_at).getTime();
@@ -90,7 +94,7 @@ export class GiteaCommonInterfacesService implements IssueServiceInterface {
     if (wasUpdated) {
       return {
         taskChanges: {
-          ...this.getAddTaskData(issue),
+          ...this.getAddTaskData(issue, projectId),
           issueWasUpdated: true,
         },
         issue,

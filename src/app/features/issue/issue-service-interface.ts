@@ -23,7 +23,10 @@ export interface IssueServiceInterface {
 
   getById$(id: string | number, projectId: string): Observable<IssueData>;
 
-  getAddTaskData(issueData: IssueDataReduced): Partial<Task> & { title: string };
+  getAddTaskData(
+    issueData: IssueDataReduced,
+    projectId: string,
+  ): Partial<Task> & { title: string };
 
   searchIssues$(searchTerm: string, projectId: string): Observable<SearchResultItem[]>;
 

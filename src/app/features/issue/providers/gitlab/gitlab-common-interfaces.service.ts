@@ -85,14 +85,15 @@ export class GitlabCommonInterfacesService implements IssueServiceInterface {
     issue: GitlabIssue;
     issueTitle: string;
   } | null> {
-    if (!task.projectId) {
+    const projectId = task.projectId ? task.projectId : 0;
+    if (!projectId) {
       throw new Error('No projectId');
     }
     if (!task.issueId) {
       throw new Error('No issueId');
     }
 
-    const cfg = await this._getCfgOnce$(task.projectId).toPromise();
+    const cfg = await this._getCfgOnce$(projectId).toPromise();
     const fullIssueRef = this._gitlabApiService.getFullIssueRef$(task.issueId, cfg);
     const idFormatChanged = task.issueId !== fullIssueRef;
     const issue = await this._gitlabApiService.getById$(fullIssueRef, cfg).toPromise();
@@ -117,7 +118,7 @@ export class GitlabCommonInterfacesService implements IssueServiceInterface {
     if (wasUpdated || idFormatChanged) {
       return {
         taskChanges: {
-          ...this.getAddTaskData(issue),
+          ...this.getAddTaskData(issue, projectId),
           issueWasUpdated: true,
         },
         issue,
@@ -198,7 +199,7 @@ export class GitlabCommonInterfacesService implements IssueServiceInterface {
           updatedIssues.push({
             task,
             taskChanges: {
-              ...this.getAddTaskData(issue),
+              ...this.getAddTaskData(issue, projectId),
               issueWasUpdated: true,
             },
             issue,
@@ -209,7 +210,10 @@ export class GitlabCommonInterfacesService implements IssueServiceInterface {
     return updatedIssues;
   }
 
-  getAddTaskData(issue: GitlabIssue): Partial<Task> & { title: string } {
+  getAddTaskData(
+    issue: GitlabIssue,
+    projectId: string,
+  ): Partial<Task> & { title: string } {
     return {
       title: this._formatIssueTitle(issue),
       issuePoints: issue.weight,

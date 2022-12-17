@@ -57,7 +57,10 @@ export class RedmineCommonInterfacesService implements IssueServiceInterface {
     );
   }
 
-  getAddTaskData(issue: RedmineIssue): Partial<Readonly<TaskCopy>> & { title: string } {
+  getAddTaskData(
+    issue: RedmineIssue,
+    projectId: string,
+  ): Partial<Readonly<TaskCopy>> & { title: string } {
     return {
       title: formatRedmineIssueSubject(issue),
       issueWasUpdated: false,
@@ -82,10 +85,11 @@ export class RedmineCommonInterfacesService implements IssueServiceInterface {
     issue: RedmineIssue;
     issueTitle: string;
   } | null> {
-    if (!task.projectId) throw new Error('No projectId');
+    const projectId = task.projectId ? task.projectId : 0;
+    if (!projectId) throw new Error('No projectId');
     if (!task.issueId) throw new Error('No issueId');
 
-    const cfg = await this._getCfgOnce$(task.projectId).toPromise();
+    const cfg = await this._getCfgOnce$(projectId).toPromise();
     const issue = await this._redmineApiService.getById$(+task.issueId, cfg).toPromise();
     const lastUpdateOn = new Date(issue.updated_on).getTime();
     const wasUpdated = lastUpdateOn > (task.issueLastUpdated || 0);
@@ -93,7 +97,7 @@ export class RedmineCommonInterfacesService implements IssueServiceInterface {
     if (wasUpdated) {
       return {
         taskChanges: {
-          ...this.getAddTaskData(issue),
+          ...this.getAddTaskData(issue, projectId),
           issueWasUpdated: true,
         },
         issue,

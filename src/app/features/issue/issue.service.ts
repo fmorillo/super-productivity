@@ -179,6 +179,7 @@ export class IssueService {
     if (issuesToAdd.length === 1) {
       const issueTitle = this.ISSUE_SERVICE_MAP[providerKey].getAddTaskData(
         issuesToAdd[0],
+        projectId,
       ).title;
       this._snackService.open({
         svgIco: ISSUE_PROVIDER_ICON_MAP[providerKey],
@@ -360,8 +361,9 @@ export class IssueService {
             issueData: issueIdOrData,
           };
 
-    const { title = null, ...additionalFields } =
-      this.ISSUE_SERVICE_MAP[issueType].getAddTaskData(issueData);
+    const { title = null, ...additionalFields } = this.ISSUE_SERVICE_MAP[
+      issueType
+    ].getAddTaskData(issueData, projectId);
 
     return this._taskService.add(title, isAddToBacklog, {
       issueType,
